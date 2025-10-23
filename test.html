@@ -1,1 +1,23 @@
+// layoutController.js
+const LayoutController = {
+  subscribers: [],
+  state: {
+    activeDrawer: null,
+  },
 
+  subscribe(fn) {
+    this.subscribers.push(fn);
+  },
+
+  setDrawer(drawerName) {
+    this.state.activeDrawer = drawerName;
+    this.subscribers.forEach((fn) => fn(this.state));
+  },
+
+  clearDrawer() {
+    this.state.activeDrawer = null;
+    this.subscribers.forEach((fn) => fn(this.state));
+  },
+};
+
+export default LayoutController;
