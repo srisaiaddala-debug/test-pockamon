@@ -1,23 +1,138 @@
-// layoutController.js
+<body class="icgds light-theme">
+  <div id="app-layout">
+    <div id="search-container"></div>
+    <div id="drawer-container"></div>
+  </div>
+</body>
+
+
+
+Add CSS:
+
+#app-layout {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  transition: all 0.3s ease;
+}
+#search-container {
+  flex: 1;
+  transition: width 0.3s ease;
+}
+#drawer-container {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.3s ease;
+}
+#drawer-container.active {
+  width: 30%;
+}
+
+
+
+
+Step 2: Add a Shared Controller (like before)
+
+Create /src/utils/layoutController.js:
+
+
+
 const LayoutController = {
   subscribers: [],
-  state: {
-    activeDrawer: null,
-  },
+  activeDrawer: null,
 
   subscribe(fn) {
     this.subscribers.push(fn);
   },
 
-  setDrawer(drawerName) {
-    this.state.activeDrawer = drawerName;
-    this.subscribers.forEach((fn) => fn(this.state));
+  openDrawer(name) {
+    this.activeDrawer = name;
+    this.subscribers.forEach(fn => fn(name));
   },
 
-  clearDrawer() {
-    this.state.activeDrawer = null;
-    this.subscribers.forEach((fn) => fn(this.state));
-  },
+  closeDrawer() {
+    this.activeDrawer = null;
+    this.subscribers.forEach(fn => fn(null));
+  }
 };
 
 export default LayoutController;
+
+
+
+
+
+Step 3: Hook LayoutController into Your Existing DOM
+
+Add a small listener script (can be in your helpCenterDrawerEntry.tsx or a new layoutManager.ts):
+
+
+
+import LayoutController from './layoutController';
+
+const searchContainer = document.getElementById('search-container');
+const drawerContainer = document.getElementById('drawer-container');
+
+LayoutController.subscribe((activeDrawer) => {
+  if (activeDrawer) {
+    searchContainer.style.width = '70%';
+    drawerContainer.classList.add('active');
+  } else {
+    searchContainer.style.width = '100%';
+    drawerContainer.classList.remove('active');
+  }
+});
+
+
+
+
+
+
+Step 4: Modify Your Drawer Buttons
+
+When a user clicks a button (like in HelpCenterDrawer.tsx or HelpChatDrawer.tsx), simply call:
+
+
+import LayoutController from '../../utils/layoutController';
+
+const openDrawer = () => {
+  LayoutController.openDrawer('help-center');
+};
+
+const closeDrawer = () => {
+  LayoutController.closeDrawer();
+};
+
+
+
+
+
+Step 5: Render Drawer Content Dynamically
+
+When you open a drawer, mount its React component inside drawer-container dynamically:
+
+
+import { createRoot } from 'react-dom/client';
+import LayoutController from './layoutController';
+import DrawerOne from './pages/DrawerOne';
+import DrawerTwo from './pages/DrawerTwo';
+
+const drawerContainer = document.getElementById('drawer-container');
+const drawerRoot = createRoot(drawerContainer);
+
+LayoutController.subscribe((activeDrawer) => {
+  if (!activeDrawer) {
+    drawerRoot.render(null);
+    return;
+  }
+
+  if (activeDrawer === 'help-center') {
+    drawerRoot.render(<DrawerOne />);
+  } else if (activeDrawer === 'chat') {
+    drawerRoot.render(<DrawerTwo />);
+  }
+});
+
+
+
+      
