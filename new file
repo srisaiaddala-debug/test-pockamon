@@ -1,0 +1,135 @@
+create new file pathSanitizer.js
+
+
+
+// utils/pathSanitizer.js
+const path = require('path');
+
+/**
+ * Sanitizes user input path to prevent path traversal
+ * @param {string} userPath - User-provided path (e.g., req.path)
+ * @param {string} baseDirectory - Base directory to confine to
+ * @param {string|RegExp} replacePattern - Optional pattern to replace
+ * @param {string} replaceWith - Replacement string
+ * @returns {string} - Sanitized absolute path
+ * @throws {Error} - If path traversal detected
+ */
+function sanitizePath(userPath, baseDirectory, replacePattern = null, replaceWith = '') {
+    // Step 1: Apply replacement
+    let updatedPath = userPath;
+    if (replacePattern) {
+        updatedPath = updatedPath.replace(replacePattern, replaceWith);
+    }
+
+    // Step 2: Normalize and remove traversal sequences
+    updatedPath = path.normalize(updatedPath).replace(/\.\./g, '');
+
+    // Step 3: Join with base directory
+    updatedPath = path.join(baseDirectory, updatedPath);
+
+    // Step 4: Resolve paths
+    const resolvedPath = path.resolve(updatedPath);
+    const resolvedBase = path.resolve(baseDirectory);
+
+    // Step 5: Validate
+    if (!resolvedPath.startsWith(resolvedBase + path.sep) && resolvedPath !== resolvedBase) {
+        throw new Error('Path traversal detected');
+    }
+
+    return resolvedPath;
+}
+
+module.exports = { sanitizePath };
+
+
+============================================================
+
+
+how to use this 
+
+BEFORE:
+
+let updatedPath = req.path.replace(API_PRESET, "build");
+updatedPath = path.join(appDirectory, updatedPath);
+const resolvedPath = path.resolve(updatedPath);
+const resolvedAppDirectory = path.resolve(appDirectory);
+if (!resolvedPath.startsWith(resolvedAppDirectory)) {
+    res.status(404).send("File not found");
+    return;
+}
+
+
+AFTER
+
+const { sanitizePath } = require('./utils/pathSanitizer');
+
+try {
+    const resolvedPath = sanitizePath(req.path, appDirectory, API_PRESET, "build");
+    
+    // Continue with your existing logic
+    if (!fs.existsSync(resolvedPath)) {
+        res.status(404).send("File not found");
+        return;
+    }
+    res.sendFile(resolvedPath);
+    
+} catch (error) {
+    if (error.message === 'Path traversal detected') {
+        console.warn(`[SECURITY] Blocked: ${req.path}`);
+        res.status(403).send("Access denied");
+    } else {
+        res.status(500).send("Internal server error");
+    }
+}
+
+old
+
+const commonProxyReqPathResolver = (req) => {
+    const pathPre = "";
+    let updatedPath = 
+        pathPre + req.originalUrl.replace( /\/${API_PRESET}/v1/, '*/ccb/v1/*');
+    logger.log({
+        message: `updatedPath: ${updatedPath} api requestId:${req.headers["x-citiportal-requestid"]}`,
+        requestid: req.headers["x-citiportal-requestid"],
+        level: "info"
+    })
+    return updatedPath;
+};
+
+
+
+============================================================ updated
+const { sanitizePath } = require('./utils/pathSanitizer');
+
+const commonProxyReqPathResolver = (req) => {
+    try {
+        const pathPre = "";
+        
+        // Get the user-provided URL
+        const originalPath = req.originalUrl.replace(/\/${API_PRESET}\/v1\//, '*/ccb/v1/*');
+        
+        // Sanitize the path to prevent traversal
+        // Note: Adjust baseDirectory based on where this proxy should be confined
+        const sanitizedPath = sanitizePath(originalPath, '/allowed/proxy/path', null, '');
+        
+        const updatedPath = pathPre + sanitizedPath;
+        
+        logger.log({
+            message: `updatedPath: ${updatedPath} api requestId:${req.headers["x-citiportal-requestid"]}`,
+            requestid: req.headers["x-citiportal-requestid"],
+            level: "info"
+        });
+        
+        return updatedPath;
+        
+    } catch (error) {
+        logger.log({
+            message: `[SECURITY] Path traversal blocked: ${req.originalUrl}`,
+            requestid: req.headers["x-citiportal-requestid"],
+            level: "error"
+        });
+        
+        // Return a safe default or throw error
+        throw new Error('Invalid path');
+    }
+};
