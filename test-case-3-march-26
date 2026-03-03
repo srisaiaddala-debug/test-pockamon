@@ -1,0 +1,10 @@
+jest.mock("@/api/faq", () => ({
+  postfaqClickEvent: jest.fn(),
+}));
+
+import { postfaqClickEvent } from "@/api/faq";
+
+beforeEach(() => {
+  (useNavigate as jest.Mock).mockReturnValue(jest.fn());
+  (postfaqClickEvent as jest.Mock).mockResolvedValue({});
+});
