@@ -1,0 +1,14 @@
+function sortFaqs(faqs, sortOrder) {
+  const countMap = new Map();
+
+  sortOrder.forEach(item => {
+    countMap.set(item.faqId, Number(item.viewCount));
+  });
+
+  return [...faqs].sort((a, b) => {
+    const countA = countMap.get(a.id) ?? -1;
+    const countB = countMap.get(b.id) ?? -1;
+
+    return countB - countA;
+  });
+}
