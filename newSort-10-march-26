@@ -1,0 +1,23 @@
+const getSortedFaqsByViewCount = (topicList, faqViewCountArray) => {
+  const viewCountMap = new Map();
+
+  faqViewCountArray.forEach(item => {
+    viewCountMap.set(item.faqId, item.viewCount);
+  });
+
+  const matchedFaqs = topicList
+    .flatMap(topic => topic.faq || [])
+    .filter(faq => viewCountMap.has(faq.id))
+    .map(faq => ({
+      ...faq,                     // full faq object
+      viewCount: viewCountMap.get(faq.id) // attach count
+    }))
+    .sort((a, b) => b.viewCount - a.viewCount);
+
+  return matchedFaqs;
+};
+
+
+const sortedFaqs = getSortedFaqsByViewCount(topicList, faqViewCountArray);
+
+console.log(sortedFaqs);
