@@ -1,0 +1,26 @@
+const getSortedFaqsByViewCount = (
+  topicList: any[],
+  faqViewCountArray: any[]
+): any[] => {
+  const viewCountMap = new Map<string, number>();
+  const uniqueFaqMap = new Map<string, any>();
+
+  faqViewCountArray.forEach((item) => {
+    viewCountMap.set(item.faqId, item.viewCount);
+  });
+
+  topicList.forEach((topic) => {
+    (topic.faq || []).forEach((faq: any) => {
+      if (viewCountMap.has(faq.id) && !uniqueFaqMap.has(faq.id)) {
+        uniqueFaqMap.set(faq.id, {
+          ...faq,
+          viewCount: viewCountMap.get(faq.id),
+        });
+      }
+    });
+  });
+
+  return Array.from(uniqueFaqMap.values()).sort(
+    (a, b) => b.viewCount - a.viewCount
+  );
+};
