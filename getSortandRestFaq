@@ -1,0 +1,40 @@
+const getSortedFaqsByViewCount = (
+  topicList: any[],
+  faqViewCountArray: any[]
+): any[] => {
+
+  const viewCountMap = new Map<string, number>();
+  const addedFaqIds = new Set<string>();
+
+  // Step 1: Build view count map
+  faqViewCountArray.forEach((item) => {
+    viewCountMap.set(item.faqId, item.viewCount);
+  });
+
+  const foundFaqs: any[] = [];
+  const notFoundFaqs: any[] = [];
+
+  // Step 2: Traverse topicList in order
+  topicList.forEach((topic) => {
+    (topic.faq || []).forEach((faq: any) => {
+      if (addedFaqIds.has(faq.id)) return; // avoid duplicates
+
+      if (viewCountMap.has(faq.id)) {
+        foundFaqs.push({
+          ...faq,
+          viewCount: viewCountMap.get(faq.id),
+        });
+      } else {
+        notFoundFaqs.push(faq); // keep original order
+      }
+
+      addedFaqIds.add(faq.id);
+    });
+  });
+
+  // Step 3: Sort found FAQs by viewCount DESC
+  foundFaqs.sort((a, b) => b.viewCount - a.viewCount);
+
+  // Step 4: Merge results
+  return [...foundFaqs, ...notFoundFaqs];
+};
