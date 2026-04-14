@@ -1,0 +1,36 @@
+// ... your existing tests end here
+});  // ← last existing test closes here
+
+// ← Add new test here
+test("renders context FAQ with parentId branch", async () => {
+  mockedAxios.get.mockResolvedValue({
+    data: { code: 200, msg: "SUCCESS", data: [] }
+  });
+
+  dispatch({
+    type: "allModuleFAQ",
+    payload: [{
+      id: "parent-id",
+      title: "Home",
+      parentId: undefined,
+      relatedFAQs: [{
+        id: "child-faq",
+        title: "Child FAQ",
+        question: "Child FAQ question",
+        answer: "Child FAQ answer"
+      }]
+    }]
+  });
+
+  render(<ContextFAQ
+    contentCode="cdcb_cash_dashboard"
+    setShowDrawer={setShowDrawer}
+    setDefaultOpenFAQ={setDefaultOpenFAQ}
+    defaultOpenFAQ=""
+  />);
+
+  const element = await screen.findByTestId("context-faq-container");
+  expect(element).toBeInTheDocument();
+});
+
+// ← closing describe block if you have one
