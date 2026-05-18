@@ -1,0 +1,7 @@
+.lm-modal-wrap:has(.sensitive-info-warning-modal) {
+  z-index: 10005 !important;
+}
+
+.lm-modal-mask:has(+ .lm-modal-wrap .sensitive-info-warning-modal) {
+  z-index: 10005 !important;
+}
